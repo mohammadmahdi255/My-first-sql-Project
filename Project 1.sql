@@ -192,7 +192,7 @@ insert into AVA(USER_NAME, AVA_POSTAGE_DATE, AVA_CONTENT)
 values ('9831068', '', 'khobi')
 
 insert into [MESSAGE](SENDING_USER_NAME, RECEIVER_USER_NAME, MES_POSTAGE_DATE, AVA_ID, MES_CONTENT)
-values ('9831066', '9831068', GETDATE(), null, 'hello are you ok?')
+values ('9831066', '9831068', GETDATE(), null, null)
 
 select *
 from MESSAGE

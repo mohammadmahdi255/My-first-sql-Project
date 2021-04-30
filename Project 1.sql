@@ -329,3 +329,21 @@ alter table RELATIONSHIP_HASHTAG_AVA
       references HASHTAG (TEXT)
 go
 
+alter table HASHTAG
+	add constraint CK_HASHTAG check (TEXT like '#%' and LEN(TEXT) = 6)
+go
+
+
+insert into [USER](FIRST_NAME, LAST_NAME, USER_NAME, PASSWORD, BIRTHDAY, REGISTERY_DATE, BIOGRAPHY)
+values ('mahdi', 'nemati', '9831066', '0024067024', '', '', ''),
+('amin', 'nemati', '9831068', '0110102142', '', '', '')
+
+insert into AVA(USER_NAME, AVA_POSTAGE_DATE, AVA_CONTENT)
+values ('9831068', '', 'khobi')
+
+insert into [MESSAGE](SENDING_USER_NAME, RECEIVER_USER_NAME, MES_POSTAGE_DATE, AVA_ID, MES_CONTENT)
+values ('9831066', '9831068', GETDATE(), null, null)
+
+select *
+from MESSAGE
+

@@ -83,6 +83,13 @@ go
 
 if exists (select 1
    from sys.sysreferences r join sys.sysobjects o on (o.id = r.constid and o.type = 'F')
+   where r.fkeyid = object_id('MESSAGE') and o.name = 'CK_MESSAGE')
+alter table MESSAGE
+   drop constraint CK_MESSAGE
+go
+
+if exists (select 1
+   from sys.sysreferences r join sys.sysobjects o on (o.id = r.constid and o.type = 'F')
    where r.fkeyid = object_id('RELATIONSHIP_HASHTAG_AVA') and o.name = 'FK_RELATION_RELATIONS_AVA')
 alter table RELATIONSHIP_HASHTAG_AVA
    drop constraint FK_RELATION_RELATIONS_AVA
@@ -153,17 +160,28 @@ go
 
 if exists (select 1
             from  sysobjects
-           where  id = object_id('"USER"')
+            where  id = object_id('"USER"')
             and   type = 'U')
    drop table "USER"
 go
+
+if exists (select 1
+			from sysobjects
+			where id = object_id('USER_LOGIN')
+			and type = 'P')
+			drop procedure USER_LOGIN
+go
+
+if type_id('USER_TABLE') is not null
+	drop type USER_TABLE;
+
 
 /*==============================================================*/
 /* Table: AVA                                                   */
 /*==============================================================*/
 create table AVA (
+   AVA_ID               int  identity(1, 1)  not null,
    USER_NAME            varchar(20)          not null,
-   AVA_ID               int                  not null,
    AVA_CONTENT          varchar(256)         not null,
    AVA_POSTAGE_DATE     datetime             not null,
    constraint PK_AVA primary key (USER_NAME, AVA_ID)
@@ -208,7 +226,7 @@ go
 /* Table: HASHTAG                                               */
 /*==============================================================*/
 create table HASHTAG (
-   TEXT                 varchar(6)           not null,
+   TEXT                 char(6)              not null,
    constraint PK_HASHTAG primary key (TEXT)
 )
 go
@@ -217,7 +235,7 @@ go
 /* Table: LOGIN                                                 */
 /*==============================================================*/
 create table LOGIN (
-   LOGIN_ID             int                  not null,
+   LOGIN_ID             int  identity(1, 1)  not null,
    USER_NAME            varchar(20)          not null,
    LOGIN_TIME           datetime             null,
    constraint PK_LOGIN primary key (USER_NAME, LOGIN_ID)
@@ -228,9 +246,9 @@ go
 /* Table: MESSAGE                                               */
 /*==============================================================*/
 create table MESSAGE (
+   MES_ID               int  identity(1, 1)  not null,
    SENDER_USER_NAME     varchar(20)          not null,
    RECEIVER_USER_NAME   varchar(20)          not null,
-   MES_ID               int                  not null,
    AVA_ID               int                  null,
    MES_POSTAGE_DATE     datetime             null,
    MES_CONTENT          varchar(256)         null,
@@ -242,9 +260,9 @@ go
 /* Table: RELATIONSHIP_HASHTAG_AVA                              */
 /*==============================================================*/
 create table RELATIONSHIP_HASHTAG_AVA (
-   USER_NAME            varchar(20)          not null,
    AVA_ID               int                  not null,
-   TEXT                 varchar(6)           not null,
+   USER_NAME            varchar(20)          not null,
+   TEXT                 char(6)              not null,
    constraint PK_RELATIONSHIP_HASHTAG_AVA primary key (USER_NAME, AVA_ID, TEXT)
 )
 go
@@ -319,6 +337,11 @@ alter table MESSAGE
       references "USER" (USER_NAME)
 go
 
+alter table MESSAGE
+   add constraint CK_MESSAGE check ((AVA_ID is null and MES_CONTENT is not null) 
+   or (AVA_ID is not null and MES_CONTENT is null))
+go
+
 alter table RELATIONSHIP_HASHTAG_AVA
    add constraint FK_RELATION_RELATIONS_AVA foreign key (USER_NAME, AVA_ID)
       references AVA (USER_NAME, AVA_ID)
@@ -329,9 +352,53 @@ alter table RELATIONSHIP_HASHTAG_AVA
       references HASHTAG (TEXT)
 go
 
+--User alter start ==============================================================
+
+create type USER_TABLE as table(
+	USER_NAME varchar(20) not null
+)
+go
+
+create procedure USER_LOGIN
+@usernames USER_TABLE readonly
+as
+begin
+
+	insert into LOGIN(USER_NAME, LOGIN_TIME)
+	select *, GETDATE() as 'LOGIN_TIME'
+	from @usernames
+
+end
+go
+
+--User alter end ================================================================
+
+--hashtag alter start ==============================================================
+
+--Hashtag check to see is start with '#' and have 5 characters
 alter table HASHTAG
 	add constraint CK_HASHTAG check (TEXT like '#%' and LEN(TEXT) = 6)
 go
+
+--auto add for Hashtag used in 
+create trigger HASHTAG_AVA 
+on RELATIONSHIP_HASHTAG_AVA
+instead of insert as
+begin
+
+insert into HASHTAG
+select TEXT 
+from inserted 
+where inserted.TEXT not in (select TEXT from HASHTAG)
+
+insert into RELATIONSHIP_HASHTAG_AVA
+select *
+from inserted
+
+end
+go
+
+-- hashtag alter end ================================================================
 
 
 insert into [USER](FIRST_NAME, LAST_NAME, USER_NAME, PASSWORD, BIRTHDAY, REGISTERY_DATE, BIOGRAPHY)
@@ -341,9 +408,15 @@ values ('mahdi', 'nemati', '9831066', '0024067024', '', '', ''),
 insert into AVA(USER_NAME, AVA_POSTAGE_DATE, AVA_CONTENT)
 values ('9831068', '', 'khobi')
 
-insert into [MESSAGE](SENDING_USER_NAME, RECEIVER_USER_NAME, MES_POSTAGE_DATE, AVA_ID, MES_CONTENT)
-values ('9831066', '9831068', GETDATE(), null, null)
+insert into RELATIONSHIP_HASHTAG_AVA(USER_NAME, AVA_ID, TEXT)
+values('9831068', 1, '#abcde')
+
+insert into [MESSAGE](SENDER_USER_NAME, RECEIVER_USER_NAME, MES_POSTAGE_DATE, AVA_ID, MES_CONTENT)
+values ('9831066', '9831068', GETDATE(), null, 'hello')
 
 select *
 from MESSAGE
+
+select *
+from HASHTAG
 

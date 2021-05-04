@@ -27,6 +27,13 @@ go
 
 if exists (select 1
    from sys.sysreferences r join sys.sysobjects o on (o.id = r.constid and o.type = 'F')
+   where r.fkeyid = object_id('BLOCKING') and o.name = 'CK_BLOCKING')
+alter table BLOCKING
+   drop constraint CK_BLOCKING
+go
+
+if exists (select 1
+   from sys.sysreferences r join sys.sysobjects o on (o.id = r.constid and o.type = 'F')
    where r.fkeyid = object_id('COMMENTING') and o.name = 'FK_COMMENTI_RELATIONS_AVA_RECEIVER')
 alter table COMMENTING
    drop constraint FK_COMMENTI_RELATIONS_AVA_RECEIVER
@@ -52,6 +59,14 @@ if exists (select 1
 alter table FOLLOWING
    drop constraint FK_FOLLOWIN_RELATIONS_USER_FOLLOWER
 go
+
+if exists (select 1
+   from sys.sysreferences r join sys.sysobjects o on (o.id = r.constid and o.type = 'F')
+   where r.fkeyid = object_id('FOLLOWING') and o.name = 'CK_FOLLOWING')
+alter table FOLLOWING
+   drop constraint CK_FOLLOWING
+go
+
 
 if exists (select 1
    from sys.sysreferences r join sys.sysobjects o on (o.id = r.constid and o.type = 'F')
@@ -175,15 +190,18 @@ go
 if type_id('USER_TABLE') is not null
 	drop type USER_TABLE;
 
+if type_id('USER_TO_USER') is not null
+	drop type USER_TO_USER;
+
 
 /*==============================================================*/
 /* Table: AVA                                                   */
 /*==============================================================*/
 create table AVA (
-   AVA_ID               int  identity(1, 1)  not null,
-   USER_NAME            varchar(20)          not null,
-   AVA_CONTENT          varchar(256)         not null,
-   AVA_POSTAGE_DATE     datetime             not null,
+   AVA_ID               int  identity(1, 1)					 not null,
+   USER_NAME            varchar(20)							 not null,
+   AVA_CONTENT          varchar(256)						 not null,
+   AVA_POSTAGE_DATE     datetime default CURRENT_TIMESTAMP   not null,
    constraint PK_AVA primary key (USER_NAME, AVA_ID)
 )
 go
@@ -194,7 +212,6 @@ go
 create table BLOCKING (
    BLOCKER_USER_NAME    varchar(20)          not null,
    BLOCKED_USER_NAME    varchar(20)          not null,
-   IS_BLOCKED           bit                  not null,
    constraint PK_BLOCKING primary key (BLOCKER_USER_NAME, BLOCKED_USER_NAME)
 )
 go
@@ -204,9 +221,9 @@ go
 /*==============================================================*/
 create table COMMENTING (
    SENDER_COMMENTING_USER_NAME varchar(20)          not null,
-   SENDER_AVA_ID        int                  not null,
-   RECEVIER_COMMENTING_USER_NAME varchar(20)          not null,
-   RECEVIER_AVA_ID      int                  not null,
+   SENDER_AVA_ID        int							not null,
+   RECEVIER_COMMENTING_USER_NAME varchar(20)        not null,
+   RECEVIER_AVA_ID      int							not null,
    constraint PK_COMMENTING primary key (RECEVIER_COMMENTING_USER_NAME, SENDER_COMMENTING_USER_NAME, SENDER_AVA_ID, RECEVIER_AVA_ID)
 )
 go
@@ -215,10 +232,9 @@ go
 /* Table: FOLLOWING                                             */
 /*==============================================================*/
 create table FOLLOWING (
-   FOLLOWED_USER_NAME   varchar(20)          not null,
    FOLLOWER_USER_NAME   varchar(20)          not null,
-   IS_FOLLOWED          bit                  not null,
-   constraint PK_FOLLOWING primary key (FOLLOWED_USER_NAME, FOLLOWER_USER_NAME)
+   FOLLOWED_USER_NAME   varchar(20)          not null,
+   constraint PK_FOLLOWING primary key (FOLLOWER_USER_NAME, FOLLOWED_USER_NAME)
 )
 go
 
@@ -235,10 +251,10 @@ go
 /* Table: LOGIN                                                 */
 /*==============================================================*/
 create table LOGIN (
-   LOGIN_ID             int  identity(1, 1)  not null,
-   USER_NAME            varchar(20)          not null,
-   LOGIN_TIME           datetime             null,
-   constraint PK_LOGIN primary key (USER_NAME, LOGIN_ID)
+   LOGIN_ID             int  identity(1, 1)					not null,
+   USER_NAME            varchar(20)						    not null,
+   LOGIN_TIME           datetime default CURRENT_TIMESTAMP  not null,
+   constraint PK_LOGIN primary key (LOGIN_ID, USER_NAME)
 )
 go
 
@@ -246,13 +262,13 @@ go
 /* Table: MESSAGE                                               */
 /*==============================================================*/
 create table MESSAGE (
-   MES_ID               int  identity(1, 1)  not null,
-   SENDER_USER_NAME     varchar(20)          not null,
-   RECEIVER_USER_NAME   varchar(20)          not null,
-   AVA_ID               int                  null,
-   MES_POSTAGE_DATE     datetime             null,
-   MES_CONTENT          varchar(256)         null,
-   constraint PK_MESSAGE primary key (SENDER_USER_NAME, RECEIVER_USER_NAME, MES_ID)
+   MES_ID               int  identity(1, 1)						not null,
+   SENDER_USER_NAME     varchar(20)								not null,
+   RECEIVER_USER_NAME   varchar(20)								not null,
+   AVA_ID               int										null,
+   MES_POSTAGE_DATE     datetime default CURRENT_TIMESTAMP      null,
+   MES_CONTENT          varchar(256)							null,
+   constraint PK_MESSAGE primary key (MES_ID, SENDER_USER_NAME, RECEIVER_USER_NAME)
 )
 go
 
@@ -271,13 +287,13 @@ go
 /* Table: "USER"                                                */
 /*==============================================================*/
 create table "USER" (
-   FIRST_NAME           varchar(20)          null,
-   LAST_NAME            varchar(20)          null,
-   USER_NAME            varchar(20)          not null,
-   PASSWORD             varchar(128)         not null,
-   BIRTHDAY             datetime             null,
-   REGISTERY_DATE       datetime             null,
-   BIOGRAPHY            varchar(64)          null,
+   FIRST_NAME           varchar(20)						      null,
+   LAST_NAME            varchar(20)						      null,
+   USER_NAME            varchar(20)						      not null,
+   PASSWORD             varchar(128)					      not null,
+   BIRTHDAY             datetime							  null,
+   REGISTERY_DATE       datetime default CURRENT_TIMESTAMP    null,
+   BIOGRAPHY            varchar(64)						      null
    constraint PK_USER primary key (USER_NAME)
 )
 go
@@ -288,13 +304,17 @@ alter table AVA
 go
 
 alter table BLOCKING
+   add constraint FK_BLOCKING_RELATIONS_USER_BLOCKER foreign key (BLOCKER_USER_NAME)
+      references "USER" (USER_NAME)
+go
+
+alter table BLOCKING
    add constraint FK_BLOCKING_RELATIONS_USER_BLOCKED foreign key (BLOCKED_USER_NAME)
       references "USER" (USER_NAME)
 go
 
 alter table BLOCKING
-   add constraint FK_BLOCKING_RELATIONS_USER_BLOCKER foreign key (BLOCKER_USER_NAME)
-      references "USER" (USER_NAME)
+   add constraint CK_BLOCKING check (BLOCKER_USER_NAME <> BLOCKED_USER_NAME)
 go
 
 alter table COMMENTING
@@ -307,20 +327,33 @@ alter table COMMENTING
       references AVA (USER_NAME, AVA_ID)
 go
 
+
+--Following alter start ==============================================================
+
 alter table FOLLOWING
-   add constraint FK_FOLLOWIN_RELATIONS_USER_FOLLOWED foreign key (FOLLOWED_USER_NAME)
+   add constraint FK_FOLLOWIN_RELATIONS_USER_FOLLOWED foreign key (FOLLOWER_USER_NAME)
       references "USER" (USER_NAME)
 go
 
 alter table FOLLOWING
-   add constraint FK_FOLLOWIN_RELATIONS_USER_FOLLOWER foreign key (FOLLOWER_USER_NAME)
+   add constraint FK_FOLLOWIN_RELATIONS_USER_FOLLOWER foreign key (FOLLOWED_USER_NAME)
       references "USER" (USER_NAME)
 go
+
+alter table FOLLOWING
+   add constraint CK_FOLLOWING check (FOLLOWER_USER_NAME <> FOLLOWED_USER_NAME)
+go
+
+--Following alter end ================================================================
+
 
 alter table LOGIN
    add constraint FK_LOGIN_RELATIONS_USER foreign key (USER_NAME)
       references "USER" (USER_NAME)
 go
+
+
+--Message alter start ================================================================
 
 alter table MESSAGE
    add constraint FK_MESSAGE_REFERENCE_AVA foreign key (SENDER_USER_NAME, AVA_ID)
@@ -338,9 +371,41 @@ alter table MESSAGE
 go
 
 alter table MESSAGE
-   add constraint CK_MESSAGE check ((AVA_ID is null and MES_CONTENT is not null) 
-   or (AVA_ID is not null and MES_CONTENT is null))
+   add constraint CK_MESSAGE check (
+								((AVA_ID is null and MES_CONTENT is not null) 
+								or 
+								(AVA_ID is not null and MES_CONTENT is null))
+								and
+								(SENDER_USER_NAME <> RECEIVER_USER_NAME)
+							   )
 go
+
+create trigger MESSAGE_BLOCK 
+on MESSAGE
+instead of insert as
+begin
+
+insert into [MESSAGE](SENDER_USER_NAME, RECEIVER_USER_NAME, MES_POSTAGE_DATE, AVA_ID, MES_CONTENT)
+select  SENDER_USER_NAME, RECEIVER_USER_NAME, MES_POSTAGE_DATE, AVA_ID, MES_CONTENT
+from inserted as I
+where not exists (select *
+					from BLOCKING as B
+					where 
+					(B.BLOCKER_USER_NAME = I.RECEIVER_USER_NAME
+					and
+					B.BLOCKED_USER_NAME = I.SENDER_USER_NAME)
+					or
+					(I.AVA_ID is not null
+					and 
+					B.BLOCKER_USER_NAME = I.SENDER_USER_NAME
+					and
+					B.BLOCKED_USER_NAME = I.RECEIVER_USER_NAME)
+					)
+
+end
+go
+
+--Message alter end ================================================================
 
 alter table RELATIONSHIP_HASHTAG_AVA
    add constraint FK_RELATION_RELATIONS_AVA foreign key (USER_NAME, AVA_ID)
@@ -355,20 +420,9 @@ go
 --User alter start ==============================================================
 
 create type USER_TABLE as table(
-	USER_NAME varchar(20) not null
+	USER_NAME            varchar(20)		  not null,
+	PASSWORD             varchar(128)         null
 )
-go
-
-create procedure USER_LOGIN
-@usernames USER_TABLE readonly
-as
-begin
-
-	insert into LOGIN(USER_NAME, LOGIN_TIME)
-	select *, GETDATE() as 'LOGIN_TIME'
-	from @usernames
-
-end
 go
 
 --User alter end ================================================================
@@ -400,23 +454,12 @@ go
 
 -- hashtag alter end ================================================================
 
+create type USER_TO_USER as table(
+	FROM_USER_NAME            varchar(20)		  not null,
+	TO_USER_NAME            varchar(20)		  not null
+)
+go
 
-insert into [USER](FIRST_NAME, LAST_NAME, USER_NAME, PASSWORD, BIRTHDAY, REGISTERY_DATE, BIOGRAPHY)
-values ('mahdi', 'nemati', '9831066', '0024067024', '', '', ''),
-('amin', 'nemati', '9831068', '0110102142', '', '', '')
 
-insert into AVA(USER_NAME, AVA_POSTAGE_DATE, AVA_CONTENT)
-values ('9831068', '', 'khobi')
 
-insert into RELATIONSHIP_HASHTAG_AVA(USER_NAME, AVA_ID, TEXT)
-values('9831068', 1, '#abcde')
-
-insert into [MESSAGE](SENDER_USER_NAME, RECEIVER_USER_NAME, MES_POSTAGE_DATE, AVA_ID, MES_CONTENT)
-values ('9831066', '9831068', GETDATE(), null, 'hello')
-
-select *
-from MESSAGE
-
-select *
-from HASHTAG
 

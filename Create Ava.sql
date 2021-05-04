@@ -1,0 +1,41 @@
+insert into AVA(USER_NAME, AVA_POSTAGE_DATE, AVA_CONTENT)
+values 
+('USER1', GETDATE(), 'AVA1'),
+('USER1', GETDATE(), 'AVA2'),
+('USER1', GETDATE(), 'AVA3'),
+
+('USER2', GETDATE(), 'AVA1'),
+('USER2', GETDATE(), 'AVA2'),
+('USER2', GETDATE(), 'AVA3'),
+
+('USER3', GETDATE(), 'AVA1'),
+('USER3', GETDATE(), 'AVA2'),
+('USER3', GETDATE(), 'AVA3'),
+
+('USER4', GETDATE(), 'AVA1'),
+('USER4', GETDATE(), 'AVA2'),
+('USER4', GETDATE(), 'AVA3'),
+
+('USER5', GETDATE(), 'AVA1'),
+('USER5', GETDATE(), 'AVA2'),
+('USER5', GETDATE(), 'AVA3'),
+
+('USER6', GETDATE(), 'AVA1'),
+('USER6', GETDATE(), 'AVA2'),
+('USER6', GETDATE(), 'AVA3'),
+
+('USER7', GETDATE(), 'AVA1'),
+('USER7', GETDATE(), 'AVA2'),
+('USER7', GETDATE(), 'AVA3'),
+
+('USER8', GETDATE(), 'AVA1'),
+('USER8', GETDATE(), 'AVA2'),
+('USER8', GETDATE(), 'AVA3'),
+
+('USER9', GETDATE(), 'AVA1'),
+('USER9', GETDATE(), 'AVA2'),
+('USER9', GETDATE(), 'AVA3')
+
+
+select *
+from AVA

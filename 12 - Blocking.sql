@@ -3,7 +3,7 @@ declare @blocking USER_TO_USER
 insert into @blocking(FROM_USER_NAME, TO_USER_NAME)
 values 
 ('USER1', 'USER2'),
-('USER2', 'USER1'),
+('USER2', 'USER5'),
 ('USER4', 'USER1'),
 ('USER3', 'USER1')
 

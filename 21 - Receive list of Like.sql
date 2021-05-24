@@ -8,10 +8,10 @@ declare @ava table(
 insert into @ava(AVA_ID, AVA_USER_NAME)
 values 
 (14, 'USER5'),
-(7, 'USER3')
+(5, 'USER2')
 
-select V.AVA_USER_NAME, COUNT(L.AVA_USER_NAME) as 'COUNT_OF_LIKE'
-from [LIKE] as L right join @ava as V
+select L.USER_NAME, L.AVA_ID, L.AVA_USER_NAME
+from [LIKE] as L join @ava as V
 on L.AVA_ID = V.AVA_ID and L.AVA_USER_NAME = V.AVA_USER_NAME
 where not exists (select *
 					from BLOCKING as B
@@ -20,5 +20,11 @@ where not exists (select *
 					and
 					B.BLOCKED_USER_NAME = L.AVA_USER_NAME
 					)
-group by V.AVA_USER_NAME
+	and  not exists (select *
+					from BLOCKING as B
+					where 
+					B.BLOCKER_USER_NAME = L.AVA_USER_NAME
+					and
+					B.BLOCKED_USER_NAME = L.USER_NAME
+					)
 					

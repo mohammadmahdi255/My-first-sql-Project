@@ -48,6 +48,20 @@ go
 
 if exists (select 1
    from sys.sysreferences r join sys.sysobjects o on (o.id = r.constid and o.type = 'F')
+   where r.fkeyid = object_id('LIKE') and o.name = 'FK_LIKE_RELATIONS_USER')
+alter table "LIKE"
+   drop constraint FK_LIKE_RELATIONS_USER
+go
+
+if exists (select 1
+   from sys.sysreferences r join sys.sysobjects o on (o.id = r.constid and o.type = 'F')
+   where r.fkeyid = object_id('LIKE') and o.name = 'FK_LIKE_RELATIONS_AVA')
+alter table "LIKE"
+   drop constraint FK_LIKE_RELATIONS_AVA
+go
+
+if exists (select 1
+   from sys.sysreferences r join sys.sysobjects o on (o.id = r.constid and o.type = 'F')
    where r.fkeyid = object_id('FOLLOWING') and o.name = 'FK_FOLLOWIN_RELATIONS_USER_FOLLOWED')
 alter table FOLLOWING
    drop constraint FK_FOLLOWIN_RELATIONS_USER_FOLLOWED
@@ -136,6 +150,13 @@ if exists (select 1
            where  id = object_id('COMMENTING')
             and   type = 'U')
    drop table COMMENTING
+go
+
+if exists (select 1
+            from  sysobjects
+           where  id = object_id('LIKE')
+            and   type = 'U')
+   drop table "LIKE"
 go
 
 if exists (select 1
@@ -229,6 +250,17 @@ create table COMMENTING (
 go
 
 /*==============================================================*/
+/* Table: LIKE                                            */
+/*==============================================================*/
+create table "LIKE" (
+   USER_NAME varchar(20)							not null,
+   AVA_ID      int									not null,
+   AVA_USER_NAME varchar(20)						not null,
+   constraint PK_LIKE primary key (USER_NAME, AVA_USER_NAME, AVA_ID)
+)
+go
+
+/*==============================================================*/
 /* Table: FOLLOWING                                             */
 /*==============================================================*/
 create table FOLLOWING (
@@ -293,7 +325,7 @@ create table "USER" (
    PASSWORD             varchar(128)					      not null,
    BIRTHDAY             datetime							  null,
    REGISTERY_DATE       datetime default CURRENT_TIMESTAMP    null,
-   BIOGRAPHY            varchar(64)						      null
+   BIOGRAPHY            varchar(64)						      null,
    constraint PK_USER primary key (USER_NAME)
 )
 go
@@ -326,6 +358,20 @@ alter table COMMENTING
    add constraint FK_COMMENTI_RELATIONS_AVA_SENDER foreign key (SENDER_COMMENTING_USER_NAME, SENDER_AVA_ID)
       references AVA (USER_NAME, AVA_ID)
 go
+
+--Like alter start ==============================================================
+
+alter table "LIKE"
+   add constraint FK_LIKE_RELATIONS_USER foreign key (USER_NAME)
+      references "USER" (USER_NAME)
+go
+
+alter table "LIKE"
+   add constraint FK_LIKE_RELATIONS_AVA foreign key (AVA_USER_NAME, AVA_ID)
+      references AVA (USER_NAME, AVA_ID)
+go
+
+--Like alter end ================================================================
 
 
 --Following alter start ==============================================================
@@ -456,7 +502,7 @@ go
 
 create type USER_TO_USER as table(
 	FROM_USER_NAME            varchar(20)		  not null,
-	TO_USER_NAME            varchar(20)		  not null
+	TO_USER_NAME			  varchar(20)		  not null
 )
 go
 

@@ -11,5 +11,18 @@ values
 ('USER9', 'USER1', GETDATE(), 25, null)
 
 select * 
-from MESSAGE
-where MES_CONTENT is null
+from [MESSAGE] as M
+where MES_CONTENT is null and not exists (select *
+											from BLOCKING as B
+											where
+											B.BLOCKER_USER_NAME = M.RECEIVER_USER_NAME
+											and
+											B.BLOCKED_USER_NAME = M.SENDER_USER_NAME
+											)
+							and not exists (select *
+											from BLOCKING as B
+											where
+											B.BLOCKER_USER_NAME = M.SENDER_USER_NAME
+											and
+											B.BLOCKED_USER_NAME = M.RECEIVER_USER_NAME
+											)

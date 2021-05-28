@@ -5,6 +5,8 @@ declare @ava table(
 
 )
 
+declare @user varchar(20) = 'USER1'
+
 insert into @ava(AVA_ID, AVA_USER_NAME)
 values 
 (14, 'USER5'),
@@ -16,15 +18,15 @@ on L.AVA_ID = V.AVA_ID and L.AVA_USER_NAME = V.AVA_USER_NAME
 where not exists (select *
 					from BLOCKING as B
 					where 
-					B.BLOCKER_USER_NAME = L.USER_NAME
+					B.BLOCKER_USER_NAME = V.AVA_USER_NAME
 					and
-					B.BLOCKED_USER_NAME = L.AVA_USER_NAME
+					B.BLOCKED_USER_NAME = @user
 					)
 	and  not exists (select *
 					from BLOCKING as B
 					where 
-					B.BLOCKER_USER_NAME = L.AVA_USER_NAME
+					B.BLOCKER_USER_NAME = L.USER_NAME
 					and
-					B.BLOCKED_USER_NAME = L.USER_NAME
+					B.BLOCKED_USER_NAME = @user
 					)
 					
